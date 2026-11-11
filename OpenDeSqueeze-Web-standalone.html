@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0B0D10" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="description" content="Local-first anamorphic photo/video desqueeze in Safari and modern browsers." />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">  <title id="title">OpenDeSqueeze</title>  <desc id="desc">An anamorphic frame becoming correctly proportioned.</desc>  <rect width="1024" height="1024" rx="220" fill="%230B0D10"/>  <g fill="none" stroke="%23F4F6F8" stroke-width="46">    <rect x="322" y="180" width="380" height="253" rx="38"/>    <ellipse cx="512" cy="307" rx="62" ry="92"/>    <rect x="180" y="650" width="664" height="282" rx="38"/>    <ellipse cx="512" cy="791" rx="92" ry="92"/>  </g>  <g stroke="%23FFB000" stroke-width="52" stroke-linecap="round" stroke-linejoin="round" fill="none">    <path d="M512 474 V586"/>    <path d="M450 530 L512 592 L574 530"/>  </g></svg>" type="image/svg+xml" />
+    <style>
+:root {
+  --bg: #0b0d10;
+  --panel: #12151a;
+  --panel-2: #171b21;
+  --border: #2b3139;
+  --text: #f4f6f8;
+  --muted: #9aa3ad;
+  --accent: #ffb000;
+  --accent-dark: #1e1605;
+  --success: #73d18c;
+  --danger: #ff7979;
+  --radius: 22px;
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); color: var(--text); }
+body { margin: 0; min-height: 100vh; background:
+  radial-gradient(circle at 20% -10%, rgba(255,176,0,.11), transparent 30rem),
+  radial-gradient(circle at 100% 20%, rgba(255,255,255,.035), transparent 24rem),
+  var(--bg); }
+button, input, select { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+a { color: inherit; }
+.site-header { max-width: 1240px; margin: auto; padding: calc(18px + env(safe-area-inset-top)) 24px 10px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
+.brand img { border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.brand div { display:grid; gap:2px; }
+.brand strong { font-size:15px; letter-spacing:.01em; }
+.brand span { color:var(--muted); font-size:12px; }
+.privacy-pill { display:flex; align-items:center; gap:8px; border:1px solid var(--border); background:rgba(18,21,26,.72); backdrop-filter: blur(14px); border-radius:999px; padding:8px 11px; color:#dfe4e8; font-size:12px; }
+.privacy-dot { width:7px; height:7px; border-radius:50%; background:var(--success); box-shadow:0 0 0 4px rgba(115,209,140,.12); }
+.app-shell { max-width:1240px; margin:auto; padding:24px 24px 60px; }
+.hero { padding:54px 0 42px; max-width:850px; }
+.eyebrow { margin:0 0 16px; color:var(--accent); font-size:12px; font-weight:700; letter-spacing:.16em; }
+h1 { margin:0; font-weight:650; letter-spacing:-.045em; font-size:clamp(42px, 7vw, 82px); line-height:.98; }
+h1 span { color:#aeb6c0; }
+.hero-copy { max-width:660px; color:var(--muted); font-size:17px; line-height:1.6; margin:24px 0 18px; }
+.runtime-row { display:flex; flex-wrap:wrap; gap:8px; }
+.capability { border:1px solid var(--border); border-radius:999px; padding:6px 9px; font-size:11px; color:var(--muted); background:rgba(255,255,255,.025); }
+.capability.ok::before { content:"●"; color:var(--success); margin-right:6px; }
+.capability.no::before { content:"●"; color:var(--danger); margin-right:6px; }
+.workspace { display:grid; grid-template-columns:minmax(0, 1.35fr) minmax(320px, .65fr); gap:22px; align-items:start; }
+.left-column { display:grid; gap:22px; min-width:0; }
+.panel, .drop-zone { border:1px solid var(--border); border-radius:var(--radius); background:linear-gradient(180deg, rgba(22,26,32,.96), rgba(16,19,24,.96)); box-shadow: 0 22px 70px rgba(0,0,0,.16); }
+.drop-zone { min-height:235px; display:grid; place-content:center; text-align:center; gap:8px; padding:32px; cursor:pointer; border-style:dashed; transition:.2s ease; }
+.drop-zone:hover, .drop-zone.dragging { border-color:#777f88; transform:translateY(-1px); background:#15191f; }
+.drop-icon { width:50px; height:50px; border-radius:50%; margin:0 auto 8px; display:grid; place-items:center; font-size:30px; font-weight:200; background:var(--accent); color:#171005; }
+.drop-zone strong { font-size:18px; }
+.drop-zone span { color:var(--muted); font-size:13px; }
+.drop-zone small { color:#69727c; font-size:11px; }
+.panel { padding:22px; }
+.panel-title-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.panel h2 { margin:0; font-size:15px; letter-spacing:-.01em; }
+.version { font-size:10px; border:1px solid var(--border); border-radius:999px; padding:5px 8px; color:var(--muted); }
+.text-button { border:0; background:transparent; color:var(--muted); padding:5px; cursor:pointer; }
+.text-button:hover { color:var(--text); }
+.file-summary { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; }
+.file-summary > div { min-width:0; padding:14px; background:#0f1216; border:1px solid #232931; border-radius:14px; display:grid; gap:5px; }
+.file-summary strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+.muted { color:var(--muted); font-size:11px; }
+.preview-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; }
+figure { margin:0; min-width:0; }
+figcaption { color:var(--muted); font-size:10px; font-weight:700; letter-spacing:.13em; margin:0 0 8px 2px; }
+.media-stage { width:100%; aspect-ratio:16/9; background:#070809; border:1px solid #262c33; border-radius:14px; overflow:hidden; display:grid; place-items:center; }
+.media-stage img, .media-stage video, .media-stage canvas { width:100%; height:100%; object-fit:fill; display:block; }
+.controls-panel { position:sticky; top:18px; }
+fieldset { border:0; padding:0; margin:0 0 22px; display:grid; gap:9px; }
+legend { padding:0; margin-bottom:10px; color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; }
+.ratio-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.ratio-button { border:1px solid var(--border); border-radius:12px; padding:11px 8px; background:#0f1216; color:#cbd1d7; cursor:pointer; }
+.ratio-button.active { border-color:var(--accent); color:var(--accent); background:var(--accent-dark); }
+.custom-ratio { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:3px; color:var(--muted); font-size:12px; }
+.custom-ratio input { width:100px; border:1px solid var(--border); border-radius:10px; background:#0c0f13; color:var(--text); padding:9px 10px; }
+.choice-card { display:flex; align-items:flex-start; gap:10px; border:1px solid var(--border); border-radius:14px; padding:13px; cursor:pointer; background:#0f1216; }
+.choice-card:has(input:checked) { border-color:#59616b; background:#15191f; }
+.choice-card input { accent-color:var(--accent); margin-top:3px; }
+.choice-card span { display:grid; gap:3px; }
+.choice-card strong { font-size:13px; }
+.choice-card small { color:var(--muted); line-height:1.4; font-size:11px; }
+.geometry-box { display:grid; justify-items:center; gap:5px; padding:15px; margin:-4px 0 22px; border-radius:14px; border:1px solid #262c33; background:#0d1014; font-variant-numeric:tabular-nums; }
+.geometry-box span { color:var(--muted); font-size:12px; }
+.geometry-box .arrow { color:var(--accent); font-size:16px; }
+.geometry-box strong { font-size:18px; }
+.geometry-box small { color:#6f7780; }
+.select-row { min-height:44px; display:flex; align-items:center; justify-content:space-between; gap:12px; color:#d8dde2; font-size:12px; }
+select { max-width:210px; border:1px solid var(--border); border-radius:10px; background:#0c0f13; color:var(--text); padding:9px 30px 9px 10px; }
+input[type="range"] { max-width:150px; accent-color:var(--accent); }
+.warning { margin:5px 0 0; border:1px solid #5e481b; background:#1d170a; border-radius:11px; padding:10px 11px; color:#e6c980; font-size:11px; line-height:1.45; }
+.primary-button, .secondary-button { width:100%; min-height:48px; border-radius:13px; border:1px solid transparent; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; cursor:pointer; text-decoration:none; }
+.primary-button { background:var(--accent); color:#171005; }
+.primary-button:disabled { background:#2a2e34; color:#737b84; cursor:not-allowed; }
+.secondary-button { margin-top:8px; background:transparent; color:#dce1e5; border-color:var(--border); }
+.small { min-height:40px; font-size:12px; }
+.progress-wrap { margin-top:16px; }
+.progress-track { height:6px; border-radius:999px; overflow:hidden; background:#272c33; }
+.progress-bar { width:0%; height:100%; background:var(--accent); transition:width .15s linear; }
+.progress-meta { margin-top:8px; display:flex; justify-content:space-between; color:var(--muted); font-size:11px; }
+.result-card { margin-top:16px; border:1px solid #35543f; background:#101912; border-radius:15px; padding:14px; display:grid; gap:5px; }
+.result-kicker { color:var(--success); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; }
+.result-card strong { font-size:13px; word-break:break-all; }
+.result-card > span:not(.result-kicker) { color:var(--muted); font-size:11px; }
+.result-actions { margin-top:8px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.result-actions .secondary-button { margin-top:0; }
+.local-note { color:#78818b; font-size:10px; line-height:1.55; margin:17px 2px 0; }
+.local-note strong { color:#a8b0b8; }
+footer { max-width:1240px; margin:auto; padding:0 24px calc(32px + env(safe-area-inset-bottom)); color:#68717b; font-size:11px; display:flex; justify-content:space-between; gap:20px; }
+footer a { color:#8e98a2; }
+@media (max-width: 900px) {
+  .workspace { grid-template-columns:1fr; }
+  .controls-panel { position:static; }
+  .hero { padding-top:35px; }
+}
+@media (max-width: 620px) {
+  .site-header, .app-shell, footer { padding-left:16px; padding-right:16px; }
+  .brand span { display:none; }
+  .privacy-pill { font-size:10px; }
+  .hero { padding-bottom:28px; }
+  .hero-copy { font-size:14px; }
+  .file-summary { grid-template-columns:1fr 1fr; }
+  .preview-grid { grid-template-columns:1fr; }
+  .panel { padding:17px; border-radius:18px; }
+  .drop-zone { border-radius:18px; min-height:210px; }
+  .ratio-grid { grid-template-columns:repeat(3,1fr); }
+  footer { flex-direction:column; gap:8px; }
+}
+
+</style>
+  <title>OpenDeSqueeze Web</title>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="OpenDeSqueeze Web">
+      <img src="data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">  <title id="title">OpenDeSqueeze</title>  <desc id="desc">An anamorphic frame becoming correctly proportioned.</desc>  <rect width="1024" height="1024" rx="220" fill="%230B0D10"/>  <g fill="none" stroke="%23F4F6F8" stroke-width="46">    <rect x="322" y="180" width="380" height="253" rx="38"/>    <ellipse cx="512" cy="307" rx="62" ry="92"/>    <rect x="180" y="650" width="664" height="282" rx="38"/>    <ellipse cx="512" cy="791" rx="92" ry="92"/>  </g>  <g stroke="%23FFB000" stroke-width="52" stroke-linecap="round" stroke-linejoin="round" fill="none">    <path d="M512 474 V586"/>    <path d="M450 530 L512 592 L574 530"/>  </g></svg>" alt="" width="42" height="42" />
+      <div>
+        <strong>OpenDeSqueeze</strong>
+        <span>Web · iPhone / iPad / Mac</span>
+      </div>
+    </a>
+    <div class="privacy-pill" title="媒體檔案不會上傳到伺服器">
+      <span class="privacy-dot"></span>
+      Local only
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="hero">
+      <p class="eyebrow">ANAMORPHIC · LOCAL-FIRST</p>
+      <h1>把被壓縮的畫面，<br><span>直接在瀏覽器解開。</span></h1>
+      <p class="hero-copy">照片走 Canvas；影片使用 WebCodecs + Mediabunny。素材留在裝置上，不上傳雲端。</p>
+      <div class="runtime-row" id="runtimeRow" aria-label="browser capability status"></div>
+    </section>
+
+    <section class="workspace">
+      <div class="left-column">
+        <label class="drop-zone" id="dropZone" for="fileInput">
+          <input id="fileInput" type="file" accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.mov,.mp4,.m4v" hidden />
+          <div class="drop-icon" aria-hidden="true">＋</div>
+          <strong>選擇照片或影片</strong>
+          <span>Photos / Files · JPG · PNG · HEIC* · MP4 · MOV</span>
+          <small>* HEIC 是否能解碼取決於瀏覽器版本。</small>
+        </label>
+
+        <section class="panel file-panel" id="filePanel" hidden>
+          <div class="panel-title-row">
+            <h2>來源</h2>
+            <button class="text-button" id="clearButton" type="button">清除</button>
+          </div>
+          <div class="file-summary">
+            <div>
+              <span class="muted">檔名</span>
+              <strong id="fileName">—</strong>
+            </div>
+            <div>
+              <span class="muted">類型</span>
+              <strong id="mediaType">—</strong>
+            </div>
+            <div>
+              <span class="muted">來源尺寸</span>
+              <strong id="sourceSize">—</strong>
+            </div>
+            <div>
+              <span class="muted">檔案大小</span>
+              <strong id="fileSize">—</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel preview-panel" id="previewPanel" hidden>
+          <div class="panel-title-row">
+            <h2>預覽</h2>
+            <span class="muted" id="previewHint">視覺預覽，不會修改原檔</span>
+          </div>
+          <div class="preview-grid">
+            <figure>
+              <figcaption>SQUEEZED</figcaption>
+              <div class="media-stage" id="sourceStage"></div>
+            </figure>
+            <figure>
+              <figcaption>DESQUEEZED</figcaption>
+              <div class="media-stage corrected" id="correctedStage"></div>
+            </figure>
+          </div>
+        </section>
+      </div>
+
+      <aside class="panel controls-panel">
+        <div class="panel-title-row">
+          <h2>校正設定</h2>
+          <span class="version">WEB v0.1</span>
+        </div>
+
+        <fieldset>
+          <legend>Squeeze ratio</legend>
+          <div class="ratio-grid" id="ratioGrid">
+            <button type="button" data-ratio="1.33" class="ratio-button active">1.33×</button>
+            <button type="button" data-ratio="1.50" class="ratio-button">1.50×</button>
+            <button type="button" data-ratio="1.55" class="ratio-button">1.55×</button>
+            <button type="button" data-ratio="1.80" class="ratio-button">1.80×</button>
+            <button type="button" data-ratio="2.00" class="ratio-button">2.00×</button>
+            <button type="button" data-ratio="custom" class="ratio-button">Custom</button>
+          </div>
+          <label class="custom-ratio" id="customRatioWrap" hidden>
+            <span>自訂倍率</span>
+            <input id="customRatio" type="number" inputmode="decimal" min="1.01" max="3" step="0.01" value="1.33" />
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Geometry</legend>
+          <label class="choice-card">
+            <input type="radio" name="geometry" value="width" checked />
+            <span>
+              <strong>Preserve Width</strong>
+              <small>維持原寬度，降低高度。行動裝置建議。</small>
+            </span>
+          </label>
+          <label class="choice-card">
+            <input type="radio" name="geometry" value="height" />
+            <span>
+              <strong>Preserve Height</strong>
+              <small>維持原高度，增加寬度。可能超過硬體編碼上限。</small>
+            </span>
+          </label>
+        </fieldset>
+
+        <div class="geometry-box">
+          <span id="geometryInput">—</span>
+          <span class="arrow">↓</span>
+          <strong id="geometryOutput">選檔後計算</strong>
+          <small id="aspectOutput">—</small>
+        </div>
+
+        <fieldset id="videoOptions" hidden>
+          <legend>Video export</legend>
+          <label class="select-row">
+            <span>Codec</span>
+            <select id="videoCodec">
+              <option value="auto">Auto (HEVC → H.264)</option>
+              <option value="hevc">HEVC / H.265</option>
+              <option value="avc">H.264 / AVC</option>
+            </select>
+          </label>
+          <label class="select-row">
+            <span>Quality</span>
+            <select id="videoQuality">
+              <option value="high">High</option>
+              <option value="medium" selected>Balanced</option>
+              <option value="low">Small</option>
+            </select>
+          </label>
+          <p class="warning" id="memoryWarning" hidden>這支影片偏大。iPhone Safari 目前會把輸出 MP4 暫存在記憶體，長 4K 影片可能因記憶體限制失敗。</p>
+        </fieldset>
+
+        <fieldset id="photoOptions" hidden>
+          <legend>Photo export</legend>
+          <label class="select-row">
+            <span>Format</span>
+            <select id="photoFormat">
+              <option value="image/jpeg">JPEG</option>
+              <option value="image/png">PNG</option>
+              <option value="image/webp">WebP</option>
+            </select>
+          </label>
+          <label class="select-row" id="jpegQualityRow">
+            <span>JPEG quality</span>
+            <input id="jpegQuality" type="range" min="70" max="100" value="92" />
+            <output id="jpegQualityValue">92</output>
+          </label>
+        </fieldset>
+
+        <button class="primary-button" id="processButton" type="button" disabled>
+          <span id="processLabel">先選擇媒體</span>
+        </button>
+        <button class="secondary-button" id="cancelButton" type="button" hidden>取消處理</button>
+
+        <div class="progress-wrap" id="progressWrap" hidden>
+          <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+          <div class="progress-meta">
+            <span id="progressText">準備中…</span>
+            <span id="progressPercent">0%</span>
+          </div>
+        </div>
+
+        <section class="result-card" id="resultCard" hidden>
+          <span class="result-kicker">完成</span>
+          <strong id="resultName">output.mp4</strong>
+          <span id="resultMeta">—</span>
+          <div class="result-actions">
+            <a class="primary-button small" id="downloadButton" download>下載</a>
+            <button class="secondary-button small" id="shareButton" type="button" hidden>分享到…</button>
+          </div>
+        </section>
+
+        <p class="local-note"><strong>Privacy:</strong> 檔案只由這個瀏覽器分頁讀取與處理。OpenDeSqueeze Web 不提供上傳 API。</p>
+      </aside>
+    </section>
+  </main>
+
+  <footer>
+    <span>OpenDeSqueeze Web · GPL-3.0</span>
+    <a href="https://github.com/juhjuhx/OpenDeSqueeze" target="_blank" rel="noreferrer">Android project ↗</a>
+  </footer>
+
+  <script type="module">
+const MEDIABUNNY_URL = 'https://cdn.jsdelivr.net/npm/mediabunny@1.61.3/+esm';
+
+const $ = (id) => document.getElementById(id);
+const state = {
+  file: null,
+  kind: null,
+  width: 0,
+  height: 0,
+  duration: null,
+  ratio: 1.33,
+  geometry: 'width',
+  sourceUrl: null,
+  outputUrl: null,
+  outputFile: null,
+  conversion: null,
+  mediabunny: null,
+};
+
+const els = {
+  fileInput: $('fileInput'), dropZone: $('dropZone'), filePanel: $('filePanel'), previewPanel: $('previewPanel'),
+  fileName: $('fileName'), mediaType: $('mediaType'), sourceSize: $('sourceSize'), fileSize: $('fileSize'),
+  clearButton: $('clearButton'), sourceStage: $('sourceStage'), correctedStage: $('correctedStage'),
+  ratioGrid: $('ratioGrid'), customRatioWrap: $('customRatioWrap'), customRatio: $('customRatio'),
+  geometryInput: $('geometryInput'), geometryOutput: $('geometryOutput'), aspectOutput: $('aspectOutput'),
+  videoOptions: $('videoOptions'), photoOptions: $('photoOptions'), videoCodec: $('videoCodec'), videoQuality: $('videoQuality'),
+  photoFormat: $('photoFormat'), jpegQuality: $('jpegQuality'), jpegQualityValue: $('jpegQualityValue'), jpegQualityRow: $('jpegQualityRow'),
+  memoryWarning: $('memoryWarning'), processButton: $('processButton'), processLabel: $('processLabel'), cancelButton: $('cancelButton'),
+  progressWrap: $('progressWrap'), progressBar: $('progressBar'), progressText: $('progressText'), progressPercent: $('progressPercent'),
+  resultCard: $('resultCard'), resultName: $('resultName'), resultMeta: $('resultMeta'), downloadButton: $('downloadButton'), shareButton: $('shareButton'),
+  runtimeRow: $('runtimeRow'),
+};
+
+function reportCapabilities() {
+  const caps = [
+    ['WebCodecs', 'VideoEncoder' in window && 'VideoDecoder' in window],
+    ['Canvas', !!document.createElement('canvas').getContext],
+    ['Web Share', 'share' in navigator],
+    ['PWA', 'serviceWorker' in navigator],
+  ];
+  els.runtimeRow.replaceChildren(...caps.map(([name, ok]) => {
+    const span = document.createElement('span');
+    span.className = `capability ${ok ? 'ok' : 'no'}`;
+    span.textContent = name;
+    return span;
+  }));
+}
+
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes)) return '—';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let n = bytes, i = 0;
+  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+  return `${n.toFixed(i === 0 ? 0 : n >= 100 ? 0 : n >= 10 ? 1 : 2)} ${units[i]}`;
+}
+
+function even(n) { return Math.max(2, Math.round(n / 2) * 2); }
+
+function getTargetGeometry() {
+  if (!state.width || !state.height) return { width: 0, height: 0 };
+  return state.geometry === 'width'
+    ? { width: even(state.width), height: even(state.height / state.ratio) }
+    : { width: even(state.width * state.ratio), height: even(state.height) };
+}
+
+function updateGeometry() {
+  if (!state.width || !state.height) {
+    els.geometryInput.textContent = '—';
+    els.geometryOutput.textContent = '選檔後計算';
+    els.aspectOutput.textContent = '—';
+    return;
+  }
+  const target = getTargetGeometry();
+  els.geometryInput.textContent = `${state.width} × ${state.height} · ${state.ratio.toFixed(2)}×`;
+  els.geometryOutput.textContent = `${target.width} × ${target.height}`;
+  els.aspectOutput.textContent = `≈ ${(target.width / target.height).toFixed(2)}:1`;
+  els.correctedStage.style.aspectRatio = `${target.width} / ${target.height}`;
+}
+
+function setRatio(ratio) {
+  state.ratio = ratio;
+  [...els.ratioGrid.querySelectorAll('.ratio-button')].forEach(btn => {
+    const v = btn.dataset.ratio;
+    btn.classList.toggle('active', v === 'custom' ? false : Number(v) === ratio);
+  });
+  updateGeometry();
+}
+
+function cleanupUrls() {
+  if (state.sourceUrl) URL.revokeObjectURL(state.sourceUrl);
+  if (state.outputUrl) URL.revokeObjectURL(state.outputUrl);
+  state.sourceUrl = null;
+  state.outputUrl = null;
+}
+
+function resetResult() {
+  if (state.outputUrl) URL.revokeObjectURL(state.outputUrl);
+  state.outputUrl = null;
+  state.outputFile = null;
+  els.resultCard.hidden = true;
+  els.shareButton.hidden = true;
+}
+
+function resetApp() {
+  if (state.conversion?.state === 'executing') state.conversion.cancel().catch(() => {});
+  cleanupUrls();
+  Object.assign(state, { file: null, kind: null, width: 0, height: 0, duration: null, outputFile: null, conversion: null });
+  els.fileInput.value = '';
+  els.filePanel.hidden = true;
+  els.previewPanel.hidden = true;
+  els.videoOptions.hidden = true;
+  els.photoOptions.hidden = true;
+  els.processButton.disabled = true;
+  els.processLabel.textContent = '先選擇媒體';
+  els.sourceStage.replaceChildren();
+  els.correctedStage.replaceChildren();
+  els.resultCard.hidden = true;
+  els.progressWrap.hidden = true;
+  updateGeometry();
+}
+
+async function loadMediabunny() {
+  if (state.mediabunny) return state.mediabunny;
+  state.mediabunny = await import(MEDIABUNNY_URL);
+  return state.mediabunny;
+}
+
+async function inspectImage(file) {
+  const bitmap = await createImageBitmap(file);
+  try {
+    state.width = bitmap.width;
+    state.height = bitmap.height;
+  } finally {
+    bitmap.close?.();
+  }
+}
+
+async function inspectVideo(file) {
+  if (!('VideoEncoder' in window) || !('VideoDecoder' in window)) {
+    throw new Error('這個瀏覽器沒有 WebCodecs VideoEncoder / VideoDecoder。請更新 Safari / iOS。');
+  }
+  const { Input, ALL_FORMATS, BlobSource } = await loadMediabunny();
+  const input = new Input({ formats: ALL_FORMATS, source: new BlobSource(file) });
+  if (!(await input.canRead())) throw new Error('目前無法辨識這個影片容器。');
+  const track = await input.getPrimaryVideoTrack();
+  if (!track) throw new Error('檔案中找不到影片軌。');
+  if (!(await track.canDecode())) throw new Error('瀏覽器無法解碼這支影片的 codec。');
+  state.width = await track.getDisplayWidth();
+  state.height = await track.getDisplayHeight();
+  state.duration = await input.getDurationFromMetadata() ?? null;
+}
+
+function buildPreview() {
+  state.sourceUrl = URL.createObjectURL(state.file);
+  els.sourceStage.replaceChildren();
+  els.correctedStage.replaceChildren();
+  const makeMedia = () => {
+    if (state.kind === 'photo') {
+      const img = new Image();
+      img.src = state.sourceUrl;
+      img.alt = 'selected media preview';
+      return img;
+    }
+    const video = document.createElement('video');
+    video.src = state.sourceUrl;
+    video.controls = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = 'metadata';
+    return video;
+  };
+  els.sourceStage.append(makeMedia());
+  els.correctedStage.append(makeMedia());
+  els.sourceStage.style.aspectRatio = `${state.width} / ${state.height}`;
+  updateGeometry();
+}
+
+async function handleFile(file) {
+  if (!file) return;
+  resetApp();
+  state.file = file;
+  state.kind = file.type.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name) ? 'photo' : file.type.startsWith('video/') || /\.(mov|mp4|m4v)$/i.test(file.name) ? 'video' : null;
+  if (!state.kind) {
+    alert('請選擇照片或影片檔案。');
+    resetApp();
+    return;
+  }
+  els.processButton.disabled = true;
+  els.processLabel.textContent = '讀取媒體資訊…';
+  try {
+    if (state.kind === 'photo') await inspectImage(file); else await inspectVideo(file);
+    els.fileName.textContent = file.name;
+    els.mediaType.textContent = state.kind === 'photo' ? 'Photo' : 'Video';
+    els.sourceSize.textContent = `${state.width} × ${state.height}`;
+    els.fileSize.textContent = formatBytes(file.size);
+    els.memoryWarning.hidden = !(state.kind === 'video' && file.size > 100 * 1024 * 1024);
+    els.filePanel.hidden = false;
+    els.previewPanel.hidden = false;
+    els.videoOptions.hidden = state.kind !== 'video';
+    els.photoOptions.hidden = state.kind !== 'photo';
+    buildPreview();
+    els.processLabel.textContent = state.kind === 'photo' ? '輸出校正照片' : '開始 Desqueeze';
+    els.processButton.disabled = false;
+  } catch (err) {
+    console.error(err);
+    alert(`無法讀取：${err.message || err}`);
+    resetApp();
+  }
+}
+
+function setProgress(progress, text = '處理中…') {
+  const p = Math.max(0, Math.min(1, progress));
+  els.progressWrap.hidden = false;
+  els.progressBar.style.width = `${(p * 100).toFixed(1)}%`;
+  els.progressPercent.textContent = `${Math.round(p * 100)}%`;
+  els.progressText.textContent = text;
+}
+
+function outputBaseName() {
+  return state.file.name.replace(/\.[^.]+$/, '') + `_desqueeze-${state.ratio.toFixed(2)}x`;
+}
+
+async function processPhoto() {
+  setProgress(0.08, '解碼照片…');
+  const bitmap = await createImageBitmap(state.file);
+  const { width, height } = getTargetGeometry();
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d', { alpha: true });
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  setProgress(0.42, '進行幾何校正…');
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close?.();
+  const mime = els.photoFormat.value;
+  const quality = mime === 'image/jpeg' ? Number(els.jpegQuality.value) / 100 : undefined;
+  setProgress(0.72, '編碼輸出…');
+  const blob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error('瀏覽器無法輸出所選圖片格式。')), mime, quality));
+  const ext = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
+  return new File([blob], `${outputBaseName()}.${ext}`, { type: mime });
+}
+
+async function pickVideoCodec(mb, width, height) {
+  const selected = els.videoCodec.value;
+  const candidates = selected === 'auto' ? ['hevc', 'avc'] : [selected];
+  const codec = await mb.getFirstEncodableVideoCodec(candidates, { width, height });
+  if (!codec) {
+    throw new Error(selected === 'auto'
+      ? `這個瀏覽器沒有可用的 HEVC/H.264 encoder，或 ${width}×${height} 超出編碼能力。`
+      : `目前無法用 ${selected.toUpperCase()} 編碼 ${width}×${height}。`);
+  }
+  return codec;
+}
+
+async function processVideo() {
+  const mb = await loadMediabunny();
+  const { Input, Output, Conversion, ALL_FORMATS, BlobSource, Mp4OutputFormat, BufferTarget, Quality } = mb;
+  const { width, height } = getTargetGeometry();
+  setProgress(0.01, '檢查編碼能力…');
+  const codec = await pickVideoCodec(mb, width, height);
+  const input = new Input({ formats: ALL_FORMATS, source: new BlobSource(state.file) });
+  const target = new BufferTarget();
+  const output = new Output({ format: new Mp4OutputFormat(), target });
+  setProgress(0.03, `${codec === 'hevc' ? 'HEVC' : 'H.264'} · 建立轉檔流程…`);
+  const conversion = await Conversion.init({
+    input,
+    output,
+    tracks: 'primary',
+    video: {
+      width,
+      height,
+      fit: 'fill',
+      codec,
+      quality: new Quality(els.videoQuality.value),
+      hardwareAcceleration: 'prefer-hardware',
+      forceTranscode: true,
+    },
+  });
+  state.conversion = conversion;
+  if (!conversion.isValid) {
+    const detail = conversion.discardedTracks?.map(x => x.reason || x).join('; ');
+    throw new Error(`無法建立有效輸出${detail ? `：${detail}` : ''}`);
+  }
+  conversion.onProgress = (p) => setProgress(Math.max(.03, p), `${codec === 'hevc' ? 'HEVC' : 'H.264'} · 本機處理中…`);
+  await conversion.execute();
+  if (!target.buffer) throw new Error('轉檔完成但沒有取得輸出資料。');
+  return new File([target.buffer], `${outputBaseName()}.mp4`, { type: 'video/mp4' });
+}
+
+async function showResult(file) {
+  resetResult();
+  state.outputFile = file;
+  state.outputUrl = URL.createObjectURL(file);
+  els.downloadButton.href = state.outputUrl;
+  els.downloadButton.download = file.name;
+  els.resultName.textContent = file.name;
+  els.resultMeta.textContent = `${formatBytes(file.size)} · ${getTargetGeometry().width} × ${getTargetGeometry().height}`;
+  els.resultCard.hidden = false;
+  if (navigator.share && navigator.canShare?.({ files: [file] })) els.shareButton.hidden = false;
+}
+
+async function processCurrent() {
+  if (!state.file) return;
+  resetResult();
+  els.processButton.disabled = true;
+  els.cancelButton.hidden = state.kind !== 'video';
+  setProgress(0, '準備中…');
+  try {
+    const output = state.kind === 'photo' ? await processPhoto() : await processVideo();
+    setProgress(1, '完成');
+    await showResult(output);
+  } catch (err) {
+    if (err?.name === 'ConversionCanceledError' || /cancel/i.test(err?.message || '')) {
+      setProgress(0, '已取消');
+    } else {
+      console.error(err);
+      setProgress(0, '失敗');
+      alert(`處理失敗：${err.message || err}`);
+    }
+  } finally {
+    state.conversion = null;
+    els.cancelButton.hidden = true;
+    els.processButton.disabled = false;
+  }
+}
+
+els.fileInput.addEventListener('change', () => handleFile(els.fileInput.files?.[0]));
+els.clearButton.addEventListener('click', resetApp);
+els.dropZone.addEventListener('dragover', e => { e.preventDefault(); els.dropZone.classList.add('dragging'); });
+els.dropZone.addEventListener('dragleave', () => els.dropZone.classList.remove('dragging'));
+els.dropZone.addEventListener('drop', e => {
+  e.preventDefault(); els.dropZone.classList.remove('dragging');
+  handleFile(e.dataTransfer?.files?.[0]);
+});
+els.ratioGrid.addEventListener('click', e => {
+  const btn = e.target.closest('.ratio-button');
+  if (!btn) return;
+  const value = btn.dataset.ratio;
+  [...els.ratioGrid.querySelectorAll('.ratio-button')].forEach(b => b.classList.toggle('active', b === btn));
+  els.customRatioWrap.hidden = value !== 'custom';
+  if (value === 'custom') setRatio(Number(els.customRatio.value)); else setRatio(Number(value));
+  if (value === 'custom') btn.classList.add('active');
+});
+els.customRatio.addEventListener('input', () => {
+  const v = Math.min(3, Math.max(1.01, Number(els.customRatio.value) || 1.33));
+  state.ratio = v; updateGeometry();
+});
+document.querySelectorAll('input[name="geometry"]').forEach(radio => radio.addEventListener('change', () => {
+  state.geometry = document.querySelector('input[name="geometry"]:checked').value;
+  updateGeometry();
+}));
+els.photoFormat.addEventListener('change', () => { els.jpegQualityRow.hidden = els.photoFormat.value !== 'image/jpeg'; });
+els.jpegQuality.addEventListener('input', () => { els.jpegQualityValue.textContent = els.jpegQuality.value; });
+els.processButton.addEventListener('click', processCurrent);
+els.cancelButton.addEventListener('click', async () => {
+  els.cancelButton.disabled = true;
+  try { await state.conversion?.cancel(); } finally { els.cancelButton.disabled = false; }
+});
+els.shareButton.addEventListener('click', async () => {
+  if (!state.outputFile) return;
+  try { await navigator.share({ files: [state.outputFile], title: 'OpenDeSqueeze output' }); }
+  catch (err) { if (err?.name !== 'AbortError') alert(`分享失敗：${err.message || err}`); }
+});
+
+reportCapabilities();
+updateGeometry();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.warn));
+}
+
+</script>
+</body>
+</html>
