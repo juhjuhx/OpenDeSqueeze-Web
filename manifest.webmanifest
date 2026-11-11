@@ -1,0 +1,14 @@
+{
+  "name": "OpenDeSqueeze Web",
+  "short_name": "DeSqueeze",
+  "description": "Local-first anamorphic desqueeze for photos and video.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0B0D10",
+  "theme_color": "#0B0D10",
+  "icons": [
+    { "src": "./assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "./assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
